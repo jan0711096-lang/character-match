@@ -5,20 +5,91 @@ const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const MAX_LEN = 300;
 
 // 세계관 목록: id는 index.html의 버튼과 같아야 합니다.
+// 각 캐릭터 뒤의 키워드는 성격/취향 기준입니다. 실제 설정과 다르면 직접 고쳐 주세요.
 const UNIVERSES = {
-  chiikawa: 'Chiikawa (Chiikawa, Hachiware, Usagi, Momonga, Kurimanju, Rakko)',
-  sanrio: 'Sanrio (Hello Kitty, My Melody, Kuromi, Cinnamoroll, Pompompurin, Pochacco, Keroppi)',
-  pokemon: 'Pokemon (Pikachu, Eevee, Snorlax, Psyduck, Jigglypuff)',
-  kakao: 'Kakao Friends (Ryan, Apeach, Muzi, Frodo, Neo)',
-  line: 'LINE Friends (Brown, Cony, Sally)',
-  rilakkuma: 'Rilakkuma and San-X (Rilakkuma, Korilakkuma, Kiiroitori)',
-  ghibli: 'Studio Ghibli (Totoro, Kiki, Ponyo, Chihiro)',
-  nintendo: 'Nintendo (Mario, Luigi, Kirby, Yoshi, Isabelle)',
-  doraemon: 'Doraemon and Crayon Shin-chan (Doraemon, Nobita, Shin-chan)',
-  pixar: 'Pixar (Woody, Buzz, Joy, Sadness, Remy)',
-  disney: 'Disney (Mickey, Stitch, Elsa, Simba)',
-  zootopia: 'Zootopia (Judy, Nick, Flash)',
+  chiikawa: ['Chiikawa', [
+    'Chiikawa: shy, easily scared, cries easily, but tries hard',
+    'Hachiware: cheerful, kind, friendly, loves singing',
+    'Usagi: energetic, loud, free, funny, carefree',
+    'Kurimanju: calm, gentle, quiet, sleepy',
+    'Rakko: cool, strong, brave',
+    'Momonga: loves attention, playful, cute',
+  ]],
+  sanrio: ['Sanrio', [
+    'Hello Kitty: kind, friendly, caring, loves baking',
+    'My Melody: sweet, helpful, kind, loves baking',
+    'Kuromi: tough, funny, rebellious but caring',
+    'Cinnamoroll: gentle, shy, friendly, sweet',
+    'Pompompurin: relaxed, easygoing, loves naps and pudding',
+    'Pochacco: sporty, active, energetic',
+    'Keroppi: cheerful, adventurous, loves playing outside',
+  ]],
+  pokemon: ['Pokemon', [
+    'Pikachu: brave, loyal, energetic, friendly',
+    'Eevee: curious, gentle, adaptable',
+    'Snorlax: lazy, relaxed, loves eating and sleeping',
+    'Psyduck: clumsy, easygoing, funny',
+    'Jigglypuff: loves singing, proud, dramatic',
+  ]],
+  kakao: ['Kakao Friends', [
+    'Ryan: calm, gentle, kind, quiet',
+    'Apeach: cheerful, playful, funny, free',
+    'Muzi: easygoing, relaxed, loves food',
+    'Frodo: stylish, smart, a little proud',
+    'Neo: elegant, loves fashion, proud',
+  ]],
+  line: ['LINE Friends', [
+    'Brown: strong, calm, reliable, a little shy',
+    'Cony: sweet, kind, caring',
+    'Sally: playful, curious, cheeky',
+  ]],
+  rilakkuma: ['Rilakkuma and San-X', [
+    'Rilakkuma: relaxed, lazy, loves sleeping and snacks',
+    'Korilakkuma: cheerful, sweet, friendly',
+    'Kiiroitori: caring, kind, hardworking',
+  ]],
+  ghibli: ['Studio Ghibli', [
+    'Totoro: gentle, kind, calm, loves nature and sleeping',
+    'Kiki: independent, hardworking, brave',
+    'Ponyo: curious, energetic, cheerful',
+    'Chihiro: brave, hardworking, kind',
+  ]],
+  nintendo: ['Nintendo', [
+    'Mario: brave, hardworking, kind',
+    'Luigi: shy, careful, kind',
+    'Kirby: cheerful, curious, loves eating',
+    'Yoshi: friendly, loyal, helpful',
+    'Isabelle: kind, helpful, hardworking, cheerful',
+  ]],
+  doraemon: ['Doraemon and Crayon Shin-chan', [
+    'Doraemon: caring, helpful, loves sweet snacks',
+    'Nobita: gentle, kind, a little lazy, loves napping',
+    'Shin-chan: funny, silly, playful',
+  ]],
+  pixar: ['Pixar', [
+    'Woody: loyal, brave, caring leader',
+    'Buzz: brave, confident, adventurous',
+    'Joy: cheerful, positive, energetic',
+    'Sadness: gentle, thoughtful, caring',
+    'Remy: creative, passionate, loves cooking',
+  ]],
+  disney: ['Disney', [
+    'Mickey: cheerful, friendly, brave',
+    'Stitch: playful, energetic, loyal to family',
+    'Elsa: strong, caring, responsible',
+    'Simba: brave, adventurous',
+  ]],
+  zootopia: ['Zootopia', [
+    'Judy: hardworking, brave, hopeful, determined',
+    'Nick: clever, funny, relaxed',
+    'Flash: slow, calm, relaxed, kind',
+  ]],
 };
+
+function universeText(id) {
+  const [name, chars] = UNIVERSES[id];
+  return `${name}: ${chars.join('; ')}`;
+}
 
 function randomUniverses(n = 3) {
   const ids = Object.keys(UNIVERSES);
@@ -40,13 +111,16 @@ function buildSystemPrompt(version) {
 The student types about 3 sentences describing a friend's personality, what the friend enjoys, and what the friend does not like.
 Your job: recommend ONE character from a movie, animation, comic, or game that matches the personality and interests.
 
+Most important rule: the character's personality and likes must match the student's description. Compare the student's traits with the traits listed for each candidate and pick the best match. Do NOT pick randomly.
+
 Rules:
 - Choose a positive, school-appropriate character that Korean middle school students are likely to know.
 - Do NOT choose Pororo, Eddy, Petty, or Loopy.
 - Do NOT choose any character in the "exclude" list the user gives.
 - The user message has "preferred universes" and "universe_rule".
-  - If universe_rule is "must": choose a character only from those universes. Pick the one that fits best.
-  - If universe_rule is "prefer": choose from those universes if one fits the description; otherwise choose from another universe.
+  - Each universe lists candidate characters with trait keywords.
+  - If universe_rule is "must": choose a character only from those candidates. Pick the best match.
+  - If universe_rule is "prefer": choose from those candidates if one clearly fits; otherwise choose a well-known character from another universe that fits better.
 - Do not default to Disney. Use only character names you are sure really exist.
 - Use only simple English (middle school level, short words).
 - Do not write an introduction paragraph or any full description of the person.
@@ -56,10 +130,11 @@ Rules:
 - If the student text is not a description of a person (or is rude or inappropriate), return "ok": false.
 
 Reply with JSON only, in exactly this shape:
-{"ok": true, "character": "name", "title": "movie or series name", "keywords": ["word1", "word2", "word3"], "why": "..."}
+{"ok": true, "student_traits": ["trait1", "trait2", "trait3"], "character": "name", "title": "movie or series name", "keywords": ["word1", "word2", "word3"], "why": "..."}
+- "student_traits": first, write the student's main personality traits and likes (short words). Then choose the character based on them.
 - "keywords": exactly 3 simple English adjectives or short phrases.
 - ${whyRule}
-- If ok is false, use empty strings and an empty keywords array.`;
+- If ok is false, use empty strings and empty arrays.`;
 }
 
 const json = (statusCode, obj) => ({
@@ -82,7 +157,7 @@ exports.handler = async (event) => {
       ? body.exclude.slice(0, 5).map((s) => String(s).slice(0, 60))
       : [];
     chosen = Array.isArray(body.universes)
-      ? body.universes.filter((id) => UNIVERSES[id]).slice(0, 12)
+      ? body.universes.filter((id) => Object.prototype.hasOwnProperty.call(UNIVERSES, id)).slice(0, 12)
       : [];
   } catch (e) {
     return json(400, { error: 'Bad request' });
@@ -94,7 +169,7 @@ exports.handler = async (event) => {
   // 학생이 고른 세계관이 있으면 그중에서만(must), 없으면 무작위 3개를 우선(prefer)
   const universeRule = chosen.length > 0 ? 'must' : 'prefer';
   const universeIds = chosen.length > 0 ? chosen : randomUniverses(3);
-  const universeList = universeIds.map((id) => UNIVERSES[id]);
+  const universeList = universeIds.map(universeText);
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -105,7 +180,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        temperature: 0.9,
+        temperature: 0.4,
         max_tokens: 1200,
         response_format: { type: 'json_object' },
         ...(MODEL.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
