@@ -3,6 +3,30 @@
 
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const MAX_LEN = 300;
+const UNIVERSES = [
+  'Chiikawa (Chiikawa, Hachiware, Usagi, Momonga, Kurimanju, Rakko)',
+  'Sanrio (Hello Kitty, My Melody, Kuromi, Cinnamoroll, Pompompurin, Pochacco, Keroppi)',
+  'Pokemon (Pikachu, Eevee, Snorlax, Psyduck, Jigglypuff)',
+  'Kakao Friends (Ryan, Apeach, Muzi, Frodo, Neo)',
+  'LINE Friends (Brown, Cony, Sally)',
+  'Rilakkuma and San-X (Rilakkuma, Korilakkuma, Kiiroitori)',
+  'Studio Ghibli (Totoro, Kiki, Ponyo, Chihiro)',
+  'Nintendo (Mario, Luigi, Kirby, Yoshi, Isabelle)',
+  'Doraemon and Crayon Shin-chan (Doraemon, Nobita, Shin-chan)',
+  'Pixar (Woody, Buzz, Joy, Sadness, Remy)',
+  'Disney (Mickey, Stitch, Elsa, Simba)',
+  'Zootopia (Judy, Nick, Flash)',
+  'Minions and Winnie the Pooh (Bob, Pooh, Piglet, Tigger)',
+];
+
+function pickUniverses(n = 3) {
+  const a = [...UNIVERSES];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
 
 function buildSystemPrompt(version) {
   const whyRule =
