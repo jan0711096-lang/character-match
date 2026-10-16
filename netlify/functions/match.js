@@ -84,8 +84,9 @@ exports.handler = async (event) => {
 
     if (response.status === 429) return json(429, { error: 'rate_limit' });
     if (!response.ok) {
-      console.error('Groq error', response.status, await response.text());
-      return json(502, { error: 'upstream' });
+      const detail = await response.text();
+      console.error('Groq error', response.status, detail);
+      return json(502, { error: 'upstream', status: response.status, detail: detail.slice(0, 300) });
     }
 
     const data = await response.json();
