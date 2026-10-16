@@ -45,6 +45,15 @@ exports.handler = async (event) => {
     return json(405, { error: 'Method Not Allowed' });
   }
 
+    // 임시 진단용: 주소 뒤에 ?models=1 을 붙이면 사용 가능한 모델 목록이 나옴
+  if (event.httpMethod === 'GET' && event.queryStringParameters?.models) {
+    const r = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+    });
+    const d = await r.json();
+    return json(r.status, d.data ? d.data.map((m) => m.id) : d);
+  }
+  
   let text, version, exclude;
   try {
     const body = JSON.parse(event.body || '{}');
