@@ -63,6 +63,16 @@
   .kw li { background: var(--pink); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 16px; font-weight: 900; }
   .why { margin: 14px 0 0; padding: 10px 12px; background: var(--soft); border-radius: 10px; }
   .hint { margin-top: 14px; font-size: 0.92rem; }
+  .uni-title { font-weight: 900; margin: 18px 0 2px; }
+  .uni-note { margin: 0 0 8px; font-size: 0.88rem; opacity: 0.8; }
+  .unis { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+  .uni {
+    font: inherit; font-weight: 700; font-size: 0.92rem; cursor: pointer;
+    border: 2px solid var(--ink); border-radius: 999px; padding: 6px 14px;
+    background: #fff; color: var(--ink);
+  }
+  .uni[aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .uni:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
   .teacher { font-size: 0.8rem; opacity: 0.6; text-align: center; }
 </style>
 </head>
@@ -84,6 +94,10 @@
       <li>curious</li><li>smart</li><li>creative</li><li>brave</li>
       <li>active</li><li>friendly</li><li>caring</li>
     </ul>
+
+    <p class="uni-title">Where is your character from?</p>
+    <p class="uni-note">Pick one or more. If you pick nothing, we will surprise you.</p>
+    <ul class="unis" id="unis"></ul>
 
     <label for="answer">Type your partner's answers here (3 sentences)</label>
     <textarea id="answer" maxlength="300"
@@ -123,6 +137,27 @@
 
   const seen = []; // 이미 나온 캐릭터 (Try another 용)
 
+  // id는 match.js의 UNIVERSES 키와 같아야 합니다.
+  const UNIVERSES = [
+    ['chiikawa', 'Chiikawa'], ['sanrio', 'Sanrio'], ['pokemon', 'Pokémon'],
+    ['kakao', 'Kakao Friends'], ['line', 'LINE Friends'], ['rilakkuma', 'Rilakkuma'],
+    ['ghibli', 'Ghibli'], ['nintendo', 'Nintendo'], ['doraemon', 'Doraemon & Shin-chan'],
+    ['pixar', 'Pixar'], ['disney', 'Disney'], ['zootopia', 'Zootopia'],
+  ];
+  const selected = new Set();
+  UNIVERSES.forEach(([id, label]) => {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'uni'; b.textContent = label;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      const on = !selected.has(id);
+      on ? selected.add(id) : selected.delete(id);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    li.appendChild(b); $('unis').appendChild(li);
+  });
+
   answer.addEventListener('input', () => {
     const n = answer.value.length;
     count.textContent = n + ' / 300';
@@ -141,7 +176,7 @@
       const res = await fetch('/api/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, version, exclude: seen }),
+        body: JSON.stringify({ text, version, exclude: seen, universes: [...selected] }),
       });
       const data = await res.json().catch(() => ({}));
 
