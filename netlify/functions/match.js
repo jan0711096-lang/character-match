@@ -40,16 +40,7 @@ const json = (statusCode, obj) => ({
   body: JSON.stringify(obj),
 });
 
-exports.handler = async (event) => {
-  // 임시 진단용: 주소 뒤에 ?models=1 을 붙이면 사용 가능한 모델 목록이 나옴
-  if (event.httpMethod === 'GET' && event.queryStringParameters?.models) {
-    const r = await fetch('https://api.groq.com/openai/v1/models', {
-      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-    });
-    const d = await r.json();
-    return json(r.status, d.data ? d.data.map((m) => m.id) : d);
-  }
-  
+exports.handler = async (event) => {  
   if (event.httpMethod !== 'POST') {
     return json(405, { error: 'Method Not Allowed' });
   }   
@@ -79,8 +70,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.9,
-        max_tokens: 250,
+        max_tokens: 1200,
         response_format: { type: 'json_object' },
+        ...(MODEL.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
         messages: [
           { role: 'system', content: buildSystemPrompt(version) },
           {
